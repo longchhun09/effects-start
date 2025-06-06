@@ -15,7 +15,7 @@ function App() {
   const [pickedPlaces, setPickedPlaces] = useState([]);
 
   useEffect(() => {
-    const storedIds = localStorage.getItem("selectedPlaces") || [];
+    const storedIds = JSON.parse(localStorage.getItem("selectedPlaces") || "[]");
     if (!storedIds.length) return;
     const storePlaces = storedIds.map((id) =>
       AVAILABLE_PLACES.find((place) => place.id === id)
@@ -32,11 +32,11 @@ function App() {
       );
 
       setAvailablePlaces(sortedPlaces);
-      const storedIds = localStorage.getItem("selectedPlaces") || [];
-        localStorage.setItem(
-          "selectedPlaces",
-          JSON.stringify(storedIds.filter((id) => id !== selectedPlace.current))
-        );
+      const storedIds = JSON.parse(localStorage.getItem("selectedPlaces") || "[]");
+      localStorage.setItem(
+        "selectedPlaces",
+        JSON.stringify(storedIds.filter((id) => id !== selectedPlace.current))
+      );
     });
   }, []);
 
