@@ -5,19 +5,48 @@ import { AVAILABLE_PLACES } from "./data";
 import Modal from "./components/Modal";
 import DeleteConfirmation from "./components/DeleteConfirmation";
 import logoImg from "./assets/logo.png";
+import { sortPlacesByDistance } from "./loc.js";
+import { useEffect } from "react";
 
 function App() {
-  const modal = useRef();
   const selectedPlace = useRef();
+  const [modalIsOpen, setModalIsOpen] = useState(false);
+  const [availablePlaces, setAvailablePlaces] = useState([]);
   const [pickedPlaces, setPickedPlaces] = useState([]);
 
+  useEffect(() => {
+    const storedIds = localStorage.getItem("selectedPlaces") || [];
+    if (!storedIds.length) return;
+    const storePlaces = storedIds.map((id) =>
+      AVAILABLE_PLACES.find((place) => place.id === id)
+    );
+    setAvailablePlaces(storePlaces);
+  }, []);
+
+  useEffect(() => {
+    navigator.geolocation.getCurrentPosition((position) => {      
+      const sortedPlaces = sortPlacesByDistance(
+        AVAILABLE_PLACES,
+        position.coords.latitude,
+        position.coords.longitude
+      );
+
+      setAvailablePlaces(sortedPlaces);
+      const storedIds = localStorage.getItem("selectedPlaces") || [];
+        localStorage.setItem(
+          "selectedPlaces",
+          JSON.stringify(storedIds.filter((id) => id !== selectedPlace.current))
+        );
+    });
+  }, []);
+
   function handleStartRemovePlace(id) {
-    modal.current.open();
+    setModalIsOpen(true);
     selectedPlace.current = id;
   }
 
   function handleStopRemovePlace() {
-    modal.current.close();
+    setModalIsOpen(false);
   }
 
   function handleSelectPlace(id) {
@@ -34,16 +63,19 @@ function App() {
     setPickedPlaces((prevPickedPlaces) =>
       prevPickedPlaces.filter((place) => place.id !== selectedPlace.current)
     );
-    modal.current.close();
+    setModalIsOpen(false);
   }
 
   return (
     <>
-      <Modal ref={modal}>
-        <DeleteConfirmation
-          onCancel={handleStopRemovePlace}
-          onConfirm={handleRemovePlace}
-        />
+      <Modal open={modalIsOpen}>
+        {
+          modalIsOpen && 
+          <DeleteConfirmation
+            onCancel={handleStopRemovePlace}
+            onConfirm={handleRemovePlace}
+          />
+        }
       </Modal>
 
       <header>
@@ -63,7 +95,7 @@ function App() {
         />
         <Places
           title="Available Places"
-          places={AVAILABLE_PLACES}
+          places={availablePlaces}
           onSelectPlace={handleSelectPlace}
         />
       </main>
